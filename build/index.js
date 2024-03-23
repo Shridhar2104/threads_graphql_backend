@@ -15,13 +15,35 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const server_1 = require("@apollo/server");
 const express4_1 = require("@apollo/server/express4");
+const db_1 = require("./lib/db");
 function init() {
     return __awaiter(this, void 0, void 0, function* () {
         const app = (0, express_1.default)();
         const PORT = Number(process.env.PORT) || 8000;
         const server = new server_1.ApolloServer({
-            typeDefs: "",
-            resolvers: {},
+            typeDefs: `
+        type Query {
+            hello: String
+          }
+        type Mutation{
+            createUser(firstName: String!, lastName:String!, email:String!, password: String!):Boolean
+        }
+        `,
+            resolvers: {
+                Mutation: {
+                    createUser: (_1, _a) => __awaiter(this, [_1, _a], void 0, function* (_, { firstName, lastName, email, password, }) {
+                        yield db_1.prismaClient.user.create({
+                            data: {
+                                email,
+                                firstName,
+                                lastName,
+                                password,
+                                salt: 'random_salt',
+                            }
+                        });
+                    })
+                }
+            },
         });
         yield server.start();
         app.use('/graphql', express_1.default.json(), (0, express4_1.expressMiddleware)(server));
